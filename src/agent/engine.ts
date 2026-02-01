@@ -1,19 +1,46 @@
-import OpenAI from 'openai';
+import { LLMProvider, createProviderFromEnv, StreamChunk } from '../providers';
 import { SkillLoader } from './skills';
 import { ToolManager } from './tools';
 
+export interface AgentConfig {
+    provider?: LLMProvider;
+    workspaceRoot: string;
+    skillsDir: string;
+    maxTurns?: number;
+}
+
 export class AgentEngine {
-    private openai: OpenAI;
+    private provider: LLMProvider;
     private skillsDir: string;
     private toolManager: ToolManager;
+    private maxTurns: number;
 
-    constructor(apiKey: string, workspaceRoot: string, skillsDir: string) {
-        this.openai = new OpenAI({ apiKey, baseURL: process.env.OPENAI_BASE_URL });
-        this.skillsDir = skillsDir;
-        this.toolManager = new ToolManager(workspaceRoot);
+    constructor(config: AgentConfig);
+    constructor(apiKey: string, workspaceRoot: string, skillsDir: string);
+    constructor(configOrApiKey: AgentConfig | string, workspaceRoot?: string, skillsDir?: string) {
+        // Support both new config-based and legacy constructor
+        if (typeof configOrApiKey === 'string') {
+            // Legacy constructor
+            this.provider = createProviderFromEnv();
+            this.skillsDir = skillsDir!;
+            this.toolManager = new ToolManager(workspaceRoot!);
+            this.maxTurns = 5;
+        } else {
+            // New config-based constructor
+            const config = configOrApiKey;
+            this.provider = config.provider || createProviderFromEnv();
+            this.skillsDir = config.skillsDir;
+            this.toolManager = new ToolManager(config.workspaceRoot);
+            this.maxTurns = config.maxTurns || 5;
+        }
     }
 
-    async run(userMessage: string, history: any[], onStream: (chunk: string) => void, context: Record<string, any> = {}) {
+    async run(
+        userMessage: string,
+        history: any[],
+        onStream: (chunk: string) => void,
+        context: Record<string, any> = {}
+    ) {
         // 1. Refresh Skills with Context
         const skillLoader = new SkillLoader(this.skillsDir, context);
         const skills = await skillLoader.loadSkills();
@@ -34,7 +61,7 @@ You are a Lite Agent, an intelligent assistant designed to execute tasks using d
 ${skillsPrompt}
     `;
 
-        const messages = [
+        const messages: any[] = [
             { role: 'system', content: systemPrompt },
             ...history,
             { role: 'user', content: userMessage }
@@ -43,37 +70,31 @@ ${skillsPrompt}
         let currentMessages = [...messages];
         let keepGoing = true;
         let turnCount = 0;
-        const MAX_TURNS = 5;
 
-        while (keepGoing && turnCount < MAX_TURNS) {
+        console.log(`[Agent] Using provider: ${this.provider.name} (${this.provider.model})`);
+
+        while (keepGoing && turnCount < this.maxTurns) {
             turnCount++;
-
             console.log(`[Agent] Turn ${turnCount} thinking...`);
 
-            // 3. Call LLM
-            const runner = await this.openai.chat.completions.create({
-                model: 'qwen-max', // 使用最强的 qwen-max 模型以保证工具调用准确
-                messages: currentMessages as any,
-                tools: this.toolManager.getTools(),
-                stream: true,
-            });
-
+            // 3. Stream Chat
             let fullContent = '';
             let toolCalls: any[] = [];
 
-            // 4. Handle Stream
-            for await (const chunk of runner) {
-                const delta = chunk.choices[0]?.delta;
+            const stream = this.provider.streamChat(currentMessages, {
+                tools: this.toolManager.getTools(),
+            });
 
+            for await (const chunk of stream) {
                 // Content
-                if (delta?.content) {
-                    fullContent += delta.content;
-                    onStream(delta.content);
+                if (chunk.content) {
+                    fullContent += chunk.content;
+                    onStream(chunk.content);
                 }
 
-                // Tool Calls logic (handling streaming chunks for tools is tricky, simplified here)
-                if (delta?.tool_calls) {
-                    for (const tc of delta.tool_calls) {
+                // Tool Calls
+                if (chunk.toolCalls) {
+                    for (const tc of chunk.toolCalls) {
                         const index = tc.index;
                         if (!toolCalls[index]) {
                             toolCalls[index] = { id: tc.id, function: { name: "", arguments: "" } };
@@ -84,22 +105,29 @@ ${skillsPrompt}
                     }
                 }
             }
-            // Filter out any incomplete tool calls
+
+            // Filter incomplete tool calls
             const finalToolCalls = toolCalls.filter(tc => tc && tc.id);
 
-            // Append assistant response to history
+            // Append assistant response
             currentMessages.push({
                 role: 'assistant',
                 content: fullContent,
-                tool_calls: toolCalls.length > 0 ? toolCalls : undefined
-            } as any);
+                tool_calls: finalToolCalls.length > 0 ? finalToolCalls : undefined
+            });
 
-            // 5. Execute Tools if any
+            // 4. Execute Tools
             if (finalToolCalls.length > 0) {
                 console.log(`[Agent] Executing ${finalToolCalls.length} tools...`);
                 for (const tc of finalToolCalls) {
                     const fnName = tc.function.name;
-                    const fnArgs = JSON.parse(tc.function.arguments);
+                    let fnArgs: any = {};
+
+                    try {
+                        fnArgs = JSON.parse(tc.function.arguments);
+                    } catch (err) {
+                        console.error(`[Agent] Failed to parse tool args: ${tc.function.arguments}`);
+                    }
 
                     const result = await this.toolManager.executeTool(fnName, fnArgs);
 
@@ -109,10 +137,23 @@ ${skillsPrompt}
                         content: JSON.stringify(result)
                     });
                 }
-                // Loop back to let LLM see tool results
             } else {
-                keepGoing = false; // Final response sent
+                keepGoing = false;
             }
         }
+
+        if (turnCount >= this.maxTurns) {
+            console.log(`[Agent] Max turns (${this.maxTurns}) reached`);
+        }
+    }
+
+    /**
+     * Get current provider info
+     */
+    getProviderInfo(): { name: string; model: string } {
+        return {
+            name: this.provider.name,
+            model: this.provider.model,
+        };
     }
 }
