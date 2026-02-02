@@ -6,6 +6,7 @@ import matter from 'gray-matter';
 export interface Skill {
     name: string;
     content: string;
+    path: string;
     metadata: Record<string, any>;
 }
 
@@ -41,6 +42,15 @@ export class SkillLoader {
             // Skip disabled skills
             if (data.disabled) continue;
 
+            // Check environment variable eligibility
+            if (data.requires_env && Array.isArray(data.requires_env)) {
+                const missing = data.requires_env.filter((key: string) => !process.env[key]);
+                if (missing.length > 0) {
+                    console.warn(`[SkillLoader] Skipping skill "${path.basename(file, '.md')}": missing env vars [${missing.join(', ')}]`);
+                    continue;
+                }
+            }
+
             // Use the directory name or filename as the skill name
             // e.g. "payment_manager/SKILL.md" -> "payment_manager"
             const name = path.dirname(file) === '.' ? path.basename(file, '.md') : path.dirname(file);
@@ -48,6 +58,7 @@ export class SkillLoader {
             skills.push({
                 name,
                 content: this.injectContext(content),
+                path: filePath,
                 metadata: data
             });
         }

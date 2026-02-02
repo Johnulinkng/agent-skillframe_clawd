@@ -305,6 +305,10 @@ export class ToolManager {
         this.registry = registry || globalRegistry;
     }
 
+    getWorkspaceRoot(): string {
+        return this.workspaceRoot;
+    }
+
     getTools(): ChatCompletionTool[] {
         return this.registry.getDefinitions();
     }
@@ -335,6 +339,16 @@ export class ToolManager {
             console.error(`[Tool Error] ${name}:`, err);
             return { status: "error", message: `Unexpected error: ${err.message}` };
         }
+    }
+
+    /**
+     * Get tool summaries for system prompt
+     */
+    getToolSummaries(): { name: string; description: string }[] {
+        return this.registry.getAll().map(t => ({
+            name: t.definition.function.name,
+            description: t.definition.function.description
+        }));
     }
 
     /**
