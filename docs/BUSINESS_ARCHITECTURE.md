@@ -186,7 +186,7 @@ export function buildSystemPrompt(ctx: AgentContext): string {
 - USDC 余额: $${ctx.usdcBalance}
 - 7日盈亏: ${ctx.pnl7d > 0 ? '+' : ''}$${ctx.pnl7d}
 
-## 重要规则
+## 规则
 ${ctx.usdcBalance < 10 ? '用户 USDC 余额不足，任何交易建议前必须先提醒充值！' : ''}
 
 ## 可用技能
@@ -253,7 +253,7 @@ lite-agent-demo/
 
 ---
 
-## 7. Implementation Status (Updated 2026-02-03)
+## 7. Implementation Status (Updated 2026-02-13)
 
 ### Phase 1: Core Trading (P0) - COMPLETE
 - [x] `api.base.ts` - Base HTTP wrapper with auth
@@ -288,6 +288,14 @@ lite-agent-demo/
 - [x] `user.ts` tools - get_user_profile, check_in, get_task_list
 - [x] `deposit_reminder/SKILL.md` - Balance insufficient handling
 - [x] `web3_analyst.md` - On-chain analysis
+
+### Phase 5: Gap Items (NOT DONE)
+- [ ] `/trade/history` (GET) - Trade history query - NO service, NO tool
+- [ ] `/trade/positions` (GET) - Current positions - NO service, NO tool
+- [ ] `/trade/pnl` (GET) - PnL summary - NO service, NO tool (workflow doc: "need investigation first")
+- [ ] `/topic/history` (GET) - Topic browse history - NO tool (workflow doc: "future")
+- [ ] `pnl_report` skill - Depends on unimplemented `get_user_pnl` tool
+- [ ] `persona4D` context injection in user profile tool - Tool returns basic profile but not 4D personality data
 
 ---
 
@@ -327,14 +335,15 @@ lite-agent-demo/
 
 ## 10. Skill Layer - Summary
 
-| Skill | Triggers | Purpose | Dependent Tools |
-|-------|----------|---------|-----------------|
-| `trade_helper` | buy, sell, swap, trade | Trade execution with balance check | `check_usdc_balance`, `create_trade_intent` |
-| `asset_analyst` | analyze portfolio, my assets | Portfolio analysis with markdown table | `get_holding_list`, `get_token_price` |
-| `price_query` | price of, how much is | Quick token price lookup | `get_token_price`, `search_token` |
-| `news_digest` | news, latest news | News retrieval and AI analysis | `get_topic_list`, `get_ai_analysis` |
-| `deposit_reminder` | (auto on low balance) | Deposit prompt when insufficient funds | `check_usdc_balance` |
-| `web3_analyst` | analyze wallet, on-chain analysis | On-chain data analysis | `get_holding_list`, `get_tx_history` |
+| Skill | Triggers | Purpose | Dependent Tools | Status |
+|-------|----------|---------|-----------------|--------|
+| `trade_helper` | buy, sell, swap, trade | Trade execution with balance check | `check_usdc_balance`, `create_trade_intent` | DONE |
+| `asset_analyst` | analyze portfolio, my assets | Portfolio analysis with markdown table | `get_holding_list`, `get_token_price` | DONE |
+| `price_query` | price of, how much is | Quick token price lookup | `get_token_price`, `search_token` | DONE |
+| `news_digest` | news, latest news | News retrieval and AI analysis | `get_topic_list`, `get_ai_analysis` | DONE |
+| `deposit_reminder` | (auto on low balance) | Deposit prompt when insufficient funds | `check_usdc_balance` | DONE |
+| `web3_analyst` | analyze wallet, on-chain analysis | On-chain data analysis | `get_holding_list`, `get_tx_history` | DONE |
+| `pnl_report` | PnL, profit and loss | 7-day PnL summary report | `get_user_pnl` | **NOT DONE** - depends on unimplemented PnL API |
 
 ---
 
