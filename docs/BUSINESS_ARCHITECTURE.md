@@ -187,7 +187,7 @@ export function buildSystemPrompt(ctx: AgentContext): string {
 - 7日盈亏: ${ctx.pnl7d > 0 ? '+' : ''}$${ctx.pnl7d}
 
 ## 重要规则
-${ctx.usdcBalance < 10 ? '⚠️ 用户 USDC 余额不足，任何交易建议前必须先提醒充值！' : ''}
+${ctx.usdcBalance < 10 ? '用户 USDC 余额不足，任何交易建议前必须先提醒充值！' : ''}
 
 ## 可用技能
 ${ctx.skillsPrompt}
@@ -197,114 +197,176 @@ ${ctx.skillsPrompt}
 
 ---
 
-## 6. 严格按照下面目录规划去生成代码
+## 6. Directory Structure (Updated)
 
 lite-agent-demo/
 ├── src/
-│   ├── services/               # 【API 层】负责真实的后端 HTTP 调用/后端 API 调用封装逻辑
-│   │   ├── api.base.ts         # 基础 Fetch 封装 (处理 Token、Header、错误拦截)
-│   │   ├── user.service.ts     # 用户画像、4D 人格、偏好设置 API
-│   │   ├── asset.service.ts    # 余额查询、持仓分析、盈亏数据 API
-│   │   ├── news.service.ts     # 新闻列表、AI 报告、相关代币 API
-│   │   └── trade.service.ts    # 价格获取、交易预检查 API
-│   │   └── context.service.ts   # 上下文聚合
+│   ├── services/                    # API Layer - Backend HTTP calls
+│   │   ├── api.base.ts              # [DONE] Base Fetch wrapper
+│   │   ├── wallet.service.ts        # [DONE] Wallet balance, holdings, history
+│   │   ├── transaction.service.ts   # [DONE] Transaction settings, Privy signing
+│   │   ├── market.service.ts        # [DONE] Market data, K-line, price
+│   │   ├── token.service.ts         # [DONE] Token follow, search, hot
+│   │   ├── news.service.ts          # [DONE] AI analysis, AI order
+│   │   ├── security.service.ts      # [DONE] Token security check
+│   │   ├── topic.service.ts         # [DONE] Topic list, detail, follow
+│   │   ├── contract.service.ts      # [DONE] Contract/perpetual trading
+│   │   ├── user.service.ts          # [DONE] User profile, settings
+│   │   ├── point.service.ts         # [DONE] Check-in, tasks, rewards
+│   │   ├── common.service.ts        # [DONE] Chain types, config
+│   │   └── search.service.ts        # [DONE] Global search
 │   ├── agent/
-│   │   ├── engine.ts            # Agent 引擎
-│   │   ├── skills.ts            # Skill 加载器
-│   │   ├── tools.ts             # 工具注册表
-│   │   ├── tools/               # 工具分文件
-│   │   │   ├── user.ts          # 用户相关工具
-│   │   │   ├── news.ts          # 新闻相关工具
-│   │   │   ├── trade.ts         # 交易相关工具
-│   │   │   └── memory.ts        # [已实现] 记忆工具 (memory_search, memory_get, memory_status)
-│   │   ├── history.ts           # [已实现] 短期对话历史管理
-│   │   ├── context-assembler.ts # [已实现] 上下文装配器
-│   │   └── system-prompt.ts     # [已实现] 系统提示构建器
-│   ├── memory/                  # [已实现] 记忆系统模块
-│   │   ├── config.ts            # 配置接口 (local/openai/qwen)
-│   │   ├── embeddings-lite.ts   # Embedding 提供者 (默认本地 all-MiniLM-L6-v2)
-│   │   ├── lite-manager.ts      # 核心记忆管理器
-│   │   ├── history.ts           # 长期历史格式化
-│   │   ├── internal.ts          # 文件扫描/分块工具
-│   │   └── index.ts             # 模块导出
-│   └── providers/               # LLM 提供商
-│      └── index.ts
-│   ├── utils.ts                 # [已实现] 工具函数 (resolveUserPath, ensureDir, createLogger)
-│   ├── types/                  # 全局类型定义（包含 Client Action 协议）
-│   └── utils/                  # 通用工具（格式化金额、时间等）
-├── MEMORY.md                    # [已实现] Agent 长期记忆存储
-├── skills/                     # 【逻辑层】技能定义，支持“按需加载”
-│   ├── asset_analyst/          # 资产分析技能文件夹
-│   │   ├── skill.md            # 触发条件、执行步骤（Markdown）
-│   │   └── references/         # (可选) 复杂的表格渲染规范或分析指标
-│   ├── news_digest/            # 新闻摘要技能
-│   │   └── skill.md            # 触发条件：XX币有什么消息
-│   └── trade_helper/           # 交易助手技能
-│       └── skill.md            # 核心逻辑：先检查 USDC 余额再调起交易
-│       └── ...
+│   │   ├── engine.ts                # [DONE] Agent engine
+│   │   ├── skills.ts                # [DONE] Skill loader
+│   │   ├── tools.ts                 # [DONE] Tool registry
+│   │   ├── tools/                   # Tool files
+│   │   │   ├── memory.ts            # [DONE] memory_search, memory_get
+│   │   │   ├── wallet.ts            # [DONE] get_wallet_balance, get_holding_list, get_tx_history
+│   │   │   ├── trade.ts             # [DONE] check_usdc_balance, create_trade_intent, sign_and_send_transaction (with user confirmation), execute_confirmed_transaction
+│   │   │   ├── market.ts            # [DONE] get_token_price, get_token_detail, get_token_kline, search_token, get_hot_tokens
+│   │   │   ├── news.ts              # [DONE] get_ai_analysis, create_ai_order, check_token_security
+│   │   │   ├── topic.ts             # [DONE] get_topic_list, get_topic_detail, get_hot_topics, follow_topic
+│   │   │   ├── token.ts             # [DONE] get_followed_tokens, follow_token, get_token_warnings
+│   │   │   └── user.ts              # [DONE] get_user_profile, check_in, get_task_list, claim_task_reward
+│   │   ├── history.ts               # [DONE] Short-term chat history
+│   │   ├── context-assembler.ts     # [DONE] Context assembler
+│   │   └── system-prompt.ts         # [DONE] System prompt builder
+│   ├── memory/                      # [DONE] Memory system
+│   │   └── ...
+│   └── providers/                   # LLM Providers
+│       └── index.ts
+├── skills/                          # Logic Layer - Skill definitions
+│   ├── trade_helper/SKILL.md        # [DONE] Trade flow with balance check
+│   ├── asset_analyst/SKILL.md       # [DONE] Portfolio analysis
+│   ├── price_query/SKILL.md         # [DONE] Quick price queries
+│   ├── news_digest/SKILL.md         # [DONE] News and AI analysis
+│   ├── deposit_reminder/SKILL.md    # [DONE] Insufficient balance handling
+│   ├── web3_analyst/SKILL.md              # [DONE] On-chain analysis
+│   └── summary.md                   # [DONE] Summary generation
 └── docs/
-    └── BUSINESS_ARCHITECTURE.md # 本文档
-    ├── storage/                 # 临时数据存储（如本地缓存的记忆 JSON 文件）
-└── config/                     # LLM 模型配置、API Keys、环境变量
+    ├── BUSINESS_ARCHITECTURE.md
+    ├── API_INTEGRATION_SPEC.md      # [NEW] API integration spec, client_action protocol, team division
+    ├── AI_AGENT_V2_TASKS.md         # [NEW] V2 AI/Agent + Recommendation system task breakdown (89 tasks)
+    ├── AI_TEAM_ALLOCATION.md        # [NEW] 3-person AI team module assignment & task allocation
+    └── API Development Documentation
 ```
 
 ---
 
-## 7. 实施路径
+## 7. Implementation Status (Updated 2026-02-03)
 
-### Phase 1: API 集成（优先级最高）
+### Phase 1: Core Trading (P0) - COMPLETE
+- [x] `api.base.ts` - Base HTTP wrapper with auth
+- [x] `wallet.service.ts` - Balance, holdings, tx history
+- [x] `transaction.service.ts` - Settings, Privy signing
+- [x] `wallet.ts` tools - get_wallet_balance, get_holding_list, get_tx_history
+- [x] `trade.ts` tools - check_usdc_balance, create_trade_intent, sign_and_send_transaction (with CONFIRM_TRANSACTION)
+- [x] `trade_helper/SKILL.md` - Trade flow with balance check
 
-1. 确认后端 API 文档，填充真实路径
-2. 实现 `get_user_assets`, `get_token_price` 等基础工具
+### Phase 2: Market Data (P1) - COMPLETE
+- [x] `market.service.ts` - Token detail, 24h, K-line, pools
+- [x] `token.service.ts` - Follow, search, hot tokens
+- [x] `market.ts` tools - get_token_price, get_token_detail, search_token
+- [x] `price_query/SKILL.md` - Quick price queries
+- [x] `asset_analyst/SKILL.md` - Portfolio analysis
 
-### Phase 2: Skills 编写
+### Phase 3: News & Topics (P2) - COMPLETE
+- [x] `news.service.ts` - AI analysis, AI order
+- [x] `topic.service.ts` - Topic list, detail, follow
+- [x] `security.service.ts` - Token security check
+- [x] `news.ts` tools - get_ai_analysis, create_ai_order, check_token_security
+- [x] `topic.ts` tools - get_topic_list, get_topic_detail, follow_topic
+- [x] `news_digest/SKILL.md` - News retrieval and AI analysis
 
-1. 编写 `skills/asset_analyst.md`
-...
-最后测试 Skill 匹配和工具调用链路
-
-### Phase 3: 上下文与人设
-
-1. 实现 `context.service.ts`
-2. 编写 `prompts/persona.ts`
-3. 集成到 `engine.ts` 的 System Prompt
-
-### Phase 4: 前端联调
-
-1. 定义 `client_action` 响应协议
-2. 编写与 App 团队联调充值/交易逻辑规则
+### Phase 4: Extended Features (P3) - COMPLETE
+- [x] `contract.service.ts` - Perpetual trading
+- [x] `user.service.ts` - User profile, settings
+- [x] `point.service.ts` - Check-in, tasks
+- [x] `common.service.ts` - Chain types
+- [x] `search.service.ts` - Global search
+- [x] `token.ts` tools - get_followed_tokens, follow_token
+- [x] `user.ts` tools - get_user_profile, check_in, get_task_list
+- [x] `deposit_reminder/SKILL.md` - Balance insufficient handling
+- [x] `web3_analyst.md` - On-chain analysis
 
 ---
 
+## 8. Service Layer - API Mapping
 
+| Service | APIs Covered | Key Methods |
+|---------|-------------|-------------|
+| `api.base.ts` | Base infrastructure | GET/POST/DELETE with Authorization |
+| `wallet.service.ts` | `/wallet/token/balance`, `/wallet/token/holding`, `/wallet/token/tx/history` | `getTokenBalance`, `getHolding`, `getTxHistory` |
+| `transaction.service.ts` | `/transaction/settings`, `/privy/sign-and-send-transaction` | `getSettings`, `signAndSendTransaction` |
+| `market.service.ts` | `/market/token/detail`, `/market/token/24h`, `/market/token/kline`, `/market/token/pools` | `getTokenDetail`, `getToken24h`, `getTokenKline` |
+| `token.service.ts` | `/token/dex/search`, `/token/follow`, `/token/hot` | `dexSearch`, `followToken`, `getHotTokens` |
+| `news.service.ts` | `/collection/ai_analyst`, `/collection/ai_order` | `aiAnalyst`, `aiOrder` |
+| `security.service.ts` | `/security/token_security` | `checkTokenSecurity` |
+| `topic.service.ts` | `/topic`, `/topic/detail/{id}`, `/topic/follow` | `getList`, `getDetail`, `follow` |
+| `contract.service.ts` | `/contract/account/*`, `/contract/order/*` | `getPositions`, `createOrder` |
+| `user.service.ts` | `/profiles/profile`, `/profiles/settings` | `getProfile`, `updateSettings` |
+| `point.service.ts` | `/pointTask/checkIn`, `/pointTask/taskList` | `checkIn`, `getTaskList` |
+| `common.service.ts` | `/common/chainTypes` | `getChainTypes` |
+| `search.service.ts` | `/search` | `search` |
 
-## 8. Development Best Practices & Risks (开发注意事项)
+---
 
-在集成业务逻辑的过程中，请务必关注以下风险点：
+## 9. Tool Layer - Registration Summary
 
-### 8.1 上下文过载风险 (Context Overload)
-*   **问题**：随着 `skills/` 目录下的 Skills 增多，`context-assembler.ts` 会将所有 Skills 描述注入 System Prompt。
-*   **风险**：Token 消耗激增，且 LLM 对过长指令的遵循能力下降。
-*   **建议**：
-    *   **按需加载**：后续应实现 Skill 的动态检索或基于 Session 类型的分类加载（例如 `PaymentSession` 只加载交易类 Skill）。
-    *   **精简描述**：`SKILL.md` 的 `description` 属性必须极其精炼。
+| Tool File | Registered Tools | Description |
+|-----------|-----------------|-------------|
+| `wallet.ts` | `get_wallet_balance`, `get_holding_list`, `get_tx_history` | Wallet and asset queries |
+| `trade.ts` | `check_usdc_balance`, `get_transaction_settings`, `create_trade_intent`, `sign_and_send_transaction`, `execute_confirmed_transaction` | Trading operations with user confirmation |
+| `market.ts` | `get_token_price`, `get_token_detail`, `get_token_kline`, `search_token`, `get_hot_tokens` | Market data queries |
+| `news.ts` | `get_ai_analysis`, `create_ai_order`, `check_token_security` | AI analysis and security |
+| `topic.ts` | `get_topic_list`, `get_topic_detail`, `get_hot_topics`, `follow_topic` | News topic management |
+| `token.ts` | `get_followed_tokens`, `follow_token`, `get_token_warnings` | Token follow/watchlist |
+| `user.ts` | `get_user_profile`, `check_in`, `get_task_list`, `claim_task_reward` | User profile and points |
 
-### 8.2 Skill 编写质量 (Prompt Engineering)
-*   **核心**：Agent 的智能程度取决于 `SKILL.md` 的编写质量。
-*   **建议**：
-    *   **明确SOP**：Skill 内部要包含详细的标准操作流程（Step-by-Step）。
-    *   **Few-Shot**：提供 1-2 个具体的问答示例（User/Assistant）能显著提高稳定性。
-    *   **避免歧义**：触发条件不要与其他 Skill 重叠。
+---
 
-### 8.3 工具健壮性 (Tool Robustness)
-*   **原则**：不要信任 LLM 传入的参数。
-*   **建议**：
-    *   **参数校验**：在 `src/agent/tools/*.ts` 中使用 Zod 或手动代码对 `args` 进行严格校验。
-    *   **优雅失败**：Tool 执行失败时，返回 `{ status: "error", message: "..." }` 而不是抛出异常，让 LLM 有机会自我修正。
+## 10. Skill Layer - Summary
 
-### 8.4 记忆系统性能
-*   **现状**：`LiteMemoryManager` 基于本地文件扫描。
-*   **建议**：避免将巨大的日志文件放入 `MEMORY.md` 或扫描路径，保持长期记忆文件的精简和高价值。
+| Skill | Triggers | Purpose | Dependent Tools |
+|-------|----------|---------|-----------------|
+| `trade_helper` | buy, sell, swap, trade | Trade execution with balance check | `check_usdc_balance`, `create_trade_intent` |
+| `asset_analyst` | analyze portfolio, my assets | Portfolio analysis with markdown table | `get_holding_list`, `get_token_price` |
+| `price_query` | price of, how much is | Quick token price lookup | `get_token_price`, `search_token` |
+| `news_digest` | news, latest news | News retrieval and AI analysis | `get_topic_list`, `get_ai_analysis` |
+| `deposit_reminder` | (auto on low balance) | Deposit prompt when insufficient funds | `check_usdc_balance` |
+| `web3_analyst` | analyze wallet, on-chain analysis | On-chain data analysis | `get_holding_list`, `get_tx_history` |
 
-### 8.5 调试
-*   **建议**：先为 Tools 编写单元测试（Unit Test），确保 Tool 本身逻辑无误，再集成到 Agent 进行 E2E 测试。
+---
+
+## 11. Development Best Practices & Risks
+
+### 11.1 Context Overload Risk
+- **Problem**: As skills grow, System Prompt gets longer
+- **Solution**: Use progressive disclosure - only load relevant skills per session type
+
+### 11.2 Skill Writing Quality
+- **Key**: Agent intelligence depends on SKILL.md quality
+- **Best Practices**:
+  - Clear step-by-step SOP
+  - 1-2 few-shot examples
+  - Non-overlapping trigger conditions
+
+### 11.3 Tool Robustness
+- Validate `args` with Zod or manual checks
+- Return `{ status: "error", message: "..." }` instead of throwing exceptions
+- Allow LLM to self-correct on failures
+
+### 11.4 Transaction Safety
+- **CRITICAL**: `sign_and_send_transaction` returns `CONFIRM_TRANSACTION` client_action
+- Frontend must show confirmation dialog before executing
+- Only `execute_confirmed_transaction` actually sends transaction after user approval
+
+### 11.5 Memory System
+- Keep `MEMORY.md` concise and high-value
+- Avoid large log files in scan paths
+
+### 11.6 Testing Strategy
+1. Unit test Tools first
+2. Integration test Service -> Tool flow
+3. E2E test full Agent conversation
+

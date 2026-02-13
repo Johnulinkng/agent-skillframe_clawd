@@ -4,6 +4,16 @@ import { ToolManager } from './tools';
 import { ChatHistoryManager, getHistoryManager } from './history';
 // Import memory tools to register them with globalRegistry
 import './tools/memory';
+// Import wallet and trade tools
+import './tools/wallet';
+import './tools/trade';
+// Import market and news tools
+import './tools/market';
+import './tools/news';
+// Import topic, token, and user tools
+import './tools/topic';
+import './tools/token';
+import './tools/user';
 import { ContextAssembler } from './context-assembler';
 import { buildAgentSystemPrompt } from './system-prompt';
 import { getMemoryManager, LiteMemoryManager } from '../memory/lite-manager';

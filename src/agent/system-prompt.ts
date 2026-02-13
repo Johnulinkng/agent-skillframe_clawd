@@ -78,7 +78,7 @@ function buildSkillsSection(skills: SkillEntry[]): string[] {
         "Before replying: scan <available_skills> <description> entries.",
         `- If exactly one skill clearly applies: read its SKILL.md at <location>, then follow it.`,
         "- If multiple could apply: choose the most specific one, then read/follow it.",
-        "- If none clearly apply: do not read any SKILL.md.",
+        "- If none clearly apply: do not read any SKILL.md. If the user is requesting a functional task (e.g. 'report taxes', 'book flight') that cannot be fulfilled by available Tools or Skills, politely inform the user that you currently lack this capability.",
         "Constraints: never read more than one skill up front; only read after selecting.",
         "",
         "<available_skills>",
